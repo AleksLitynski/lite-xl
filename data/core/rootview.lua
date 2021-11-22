@@ -7,43 +7,8 @@ local Object = require "core.object"
 local View = require "core.view"
 local NagView = require "core.nagview"
 local DocView = require "core.docview"
-
-
-local EmptyView = View:extend()
-
-local function draw_text(x, y, color)
-  local th = style.big_font:get_height()
-  local dh = 2 * th + style.padding.y * 2
-  local x1, y1 = x, y + (dh - th) / 2
-  x = renderer.draw_text(style.big_font, "Lite XL", x1, y1, color)
-  renderer.draw_text(style.font, "version " .. VERSION, x1, y1 + th, color)
-  x = x + style.padding.x
-  renderer.draw_rect(x, y, math.ceil(1 * SCALE), dh, color)
-  local lines = {
-    { fmt = "%s to run a command", cmd = "core:find-command" },
-    { fmt = "%s to open a file from the project", cmd = "core:find-file" },
-    { fmt = "%s to change project folder", cmd = "core:change-project-folder" },
-    { fmt = "%s to open a project folder", cmd = "core:open-project-folder" },
-  }
-  th = style.font:get_height()
-  y = y + (dh - (th + style.padding.y) * #lines) / 2
-  local w = 0
-  for _, line in ipairs(lines) do
-    local text = string.format(line.fmt, keymap.get_binding(line.cmd))
-    w = math.max(w, renderer.draw_text(style.font, text, x + style.padding.x, y, color))
-    y = y + th + style.padding.y
-  end
-  return w, dh
-end
-
-function EmptyView:draw()
-  self:draw_background(style.background)
-  local w, h = draw_text(0, 0, { 0, 0, 0, 0 })
-  local x = self.position.x + math.max(style.padding.x, (self.size.x - w) / 2)
-  local y = self.position.y + (self.size.y - h) / 2
-  draw_text(x, y, style.dim)
-end
-
+local EmptyView = require "core.emptyview"
+local command = require "core.command"
 
 
 local Node = Object:extend()
@@ -266,6 +231,19 @@ function Node:get_visible_tabs_number()
   return math.min(#self.views - self.tab_offset + 1, config.max_tabs)
 end
 
+
+function Node:in_tab_gutter(px, py)
+  if not self:should_show_tabs() then return nil end
+
+  local tab_area_width = self.size.x - 2 * sbw
+  local tab_area_height = style.font:get_height() + style.padding.y * 2
+
+
+
+  local in_tab_area = px >= 0 and px < tab_area_width and py < tab_area_height and py >= 0
+  local in_tab = get_tab_overlapping_point(px, py)
+  return not in_tab and in_tab_area
+end
 
 function Node:get_tab_overlapping_point(px, py)
   if not self:should_show_tabs() then return nil end
@@ -877,6 +855,11 @@ function RootView:on_mouse_pressed(button, x, y, clicks)
       return true
     end
   elseif not self.dragged_node then -- avoid sending on_mouse_pressed events when dragging tabs
+    local in_gutter = self.root_node:in_tab_gutter(x, y)
+    if in_gutter then
+      command.perform "core:new-doc"
+      return true
+    end
     core.set_active_view(node.active_view)
     if not self.on_view_mouse_pressed(button, x, y, clicks) then
       return node.active_view:on_mouse_pressed(button, x, y, clicks)
