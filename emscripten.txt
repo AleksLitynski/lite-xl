@@ -1,0 +1,23 @@
+
+[binaries]
+c = 'emcc'
+ar = 'emar'
+pkgconfig = 'pkg-config'
+cmake = 'cmake'
+
+[properties]
+root = '/home/ajl/.asdf/installs/emsdk/3.0.0/upstream/emscripten/system'
+shared_lib_suffix = 'js'
+static_lib_suffix = 'js'
+shared_module_suffix = 'js'
+exe_suffix = 'js'
+
+[built-in options]
+c_args = ['-s', 'USE_SDL=2', '-s', 'WASM=1', '-O2']
+c_link_args = ['-s', 'WASM=1','-O2']
+
+[host_machine]
+system = 'emscripten'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
