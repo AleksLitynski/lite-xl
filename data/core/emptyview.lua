@@ -1,6 +1,7 @@
 local style = require "core.style"
 local keymap = require "core.keymap"
 local View = require "core.view"
+local command = require "core.command"
 
 local EmptyView = View:extend()
 
@@ -35,6 +36,13 @@ function EmptyView:draw()
   local x = self.position.x + math.max(style.padding.x, (self.size.x - w) / 2)
   local y = self.position.y + (self.size.y - h) / 2
   draw_text(x, y, style.dim)
+end
+
+function EmptyView:on_mouse_pressed(button, x, y, clicks)
+  if button == "left" and clicks == 2 then
+    command.perform "core:new-doc"
+    return true
+  end
 end
 
 return EmptyView

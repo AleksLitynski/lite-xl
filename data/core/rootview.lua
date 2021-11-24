@@ -231,17 +231,13 @@ function Node:get_visible_tabs_number()
   return math.min(#self.views - self.tab_offset + 1, config.max_tabs)
 end
 
-
 function Node:in_tab_gutter(px, py)
-  if not self:should_show_tabs() then return nil end
-
-  local tab_area_width = self.size.x - 2 * sbw
+  local tab_area_width = self.size.x - 2 * get_scroll_button_width()
   local tab_area_height = style.font:get_height() + style.padding.y * 2
 
-
-
   local in_tab_area = px >= 0 and px < tab_area_width and py < tab_area_height and py >= 0
-  local in_tab = get_tab_overlapping_point(px, py)
+  local in_tab = Node:get_tab_overlapping_point(px, py)
+
   return not in_tab and in_tab_area
 end
 
@@ -259,11 +255,13 @@ end
 function Node:should_show_tabs()
   if self.locked then return false end
   local dn = core.root_view.dragged_node
-  if #self.views > 1
+  if self and self.views and #self.views > 1
      or (dn and dn.dragging) then -- show tabs while dragging
     return true
   elseif config.always_show_tabs then
-    return not self.views[1]:is(EmptyView)
+    if self and self.views and self.views[1] then
+      return not self.views[1]:is(EmptyView)
+    end
   end
   return false
 end
@@ -856,7 +854,7 @@ function RootView:on_mouse_pressed(button, x, y, clicks)
     end
   elseif not self.dragged_node then -- avoid sending on_mouse_pressed events when dragging tabs
     local in_gutter = self.root_node:in_tab_gutter(x, y)
-    if in_gutter then
+    if in_gutter and button == "left" and clicks == 2 then
       command.perform "core:new-doc"
       return true
     end
