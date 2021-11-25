@@ -231,14 +231,43 @@ function Node:get_visible_tabs_number()
   return math.min(#self.views - self.tab_offset + 1, config.max_tabs)
 end
 
-function Node:in_tab_gutter(px, py)
-  local tab_area_width = self.size.x - 2 * get_scroll_button_width()
-  local tab_area_height = style.font:get_height() + style.padding.y * 2
+function Node:in_tab_area(x, y)
+  if not self:should_show_tabs() then return false end
 
-  local in_tab_area = px >= 0 and px < tab_area_width and py < tab_area_height and py >= 0
-  local in_tab = Node:get_tab_overlapping_point(px, py)
+  local in_bounds_left = x >= self.position.x
+  local in_bounds_right = x < self.size.x + self.position.x
+  local in_bounds_top = y >= self.position.y
+  local in_bounds_bottom = y < self.position.y + self:tab_height()
 
-  return not in_tab and in_tab_area
+  return in_bounds_left and in_bounds_right and in_bounds_top and in_bounds_bottom
+end
+
+function Node:in_tab_scroll_button(x, y)
+  if not self:should_show_tabs() then return false end
+  if not self:in_tab_area(x, y) then return false end
+
+  local scroll_button_width = get_scroll_button_width()
+  return self.position.x + scroll_button_width > x -- left button
+    or self.position.x + self.size.x - scroll_button_width <= x -- right button
+end
+
+function Node:in_tab(x, y)
+  if not self:should_show_tabs() then return false end
+  if self:get_tab_overlapping_point(x, y) ~= nil then
+    return true
+  else
+    return false
+  end
+end
+
+function Node:in_tab_area_gutter(x, y)
+  if not self:should_show_tabs() then return false end
+
+  if self:in_tab_area(x, y) and not self:in_tab(x, y) and not self:in_tab_scroll_button(x, y) then
+    return true
+  end
+
+  return false
 end
 
 function Node:get_tab_overlapping_point(px, py)
@@ -255,13 +284,10 @@ end
 function Node:should_show_tabs()
   if self.locked then return false end
   local dn = core.root_view.dragged_node
-  if self and self.views and #self.views > 1
-     or (dn and dn.dragging) then -- show tabs while dragging
+  if #self.views > 1 or (dn and dn.dragging) then -- show tabs while dragging
     return true
   elseif config.always_show_tabs then
-    if self and self.views and self.views[1] then
       return not self.views[1]:is(EmptyView)
-    end
   end
   return false
 end
@@ -314,10 +340,13 @@ function Node:get_child_overlapping_point(x, y)
   return child:get_child_overlapping_point(x, y)
 end
 
+function Node:tab_height()
+  return style.font:get_height() + style.padding.y * 2
+end
 
 function Node:get_scroll_button_rect(index)
   local w, pad = get_scroll_button_width()
-  local h = style.font:get_height() + style.padding.y * 2
+  local h = self:tab_height()
   local x = self.position.x + (index == 1 and 0 or self.size.x - w)
   return x, self.position.y, w, h, pad
 end
@@ -329,8 +358,7 @@ function Node:get_tab_rect(idx)
   local x0 = self.position.x + sbw
   local x1 = x0 + common.clamp(self.tab_width * (idx - 1) - self.tab_shift, 0, maxw)
   local x2 = x0 + common.clamp(self.tab_width * idx - self.tab_shift, 0, maxw)
-  local h = style.font:get_height() + style.padding.y * 2
-  return x1, self.position.y, x2 - x1, h
+  return x1, self.position.y, x2 - x1, self:tab_height()
 end
 
 
@@ -540,6 +568,15 @@ function Node:draw_tab(text, is_active, is_hovered, is_close_hovered, x, y, w, h
   core.pop_clip_rect()
 end
 
+function Node:tabs_overflow_start()
+  return self.tab_offset > 1
+end
+
+function Node:tabs_overflow_end()
+  local tabs_number = self:get_visible_tabs_number()
+  return #self.views > self.tab_offset + tabs_number - 1
+end
+
 function Node:draw_tabs()
   local x, y, w, h, scroll_padding = self:get_scroll_button_rect(1)
   local ds = style.divider_size
@@ -548,13 +585,13 @@ function Node:draw_tabs()
   renderer.draw_rect(x, y, self.size.x, h, style.background2)
   renderer.draw_rect(x, y + h - ds, self.size.x, ds, style.divider)
 
-  if self.tab_offset > 1 then
+  if self:tabs_overflow_start() then
     local button_style = self.hovered_scroll_button == 1 and style.text or style.dim
     common.draw_text(style.icon_font, button_style, "<", nil, x + scroll_padding, y, 0, h)
   end
 
   local tabs_number = self:get_visible_tabs_number()
-  if #self.views > self.tab_offset + tabs_number - 1 then
+  if self:tabs_overflow_end() then
     local xrb, yrb, wrb = self:get_scroll_button_rect(2)
     local button_style = self.hovered_scroll_button == 2 and style.text or style.dim
     common.draw_text(style.icon_font, button_style, ">", nil, xrb + scroll_padding, yrb, 0, h)
@@ -853,7 +890,7 @@ function RootView:on_mouse_pressed(button, x, y, clicks)
       return true
     end
   elseif not self.dragged_node then -- avoid sending on_mouse_pressed events when dragging tabs
-    local in_gutter = self.root_node:in_tab_gutter(x, y)
+    local in_gutter = node:in_tab_area_gutter(x, y)
     if in_gutter and button == "left" and clicks == 2 then
       command.perform "core:new-doc"
       return true
@@ -1002,7 +1039,19 @@ end
 function RootView:on_mouse_wheel(...)
   local x, y = self.mouse.x, self.mouse.y
   local node = self.root_node:get_child_overlapping_point(x, y)
-  return node.active_view:on_mouse_wheel(...)
+  if node:in_tab_area(x, y) then
+    local can_scroll_left = node:tabs_overflow_start()
+    local can_scroll_right = node:tabs_overflow_end()
+    local scroll_direction = "left"
+    local scroll_dir = ({...})[1]
+    if scroll_dir == -1 and can_scroll_left then
+      node:scroll_tabs(1)
+    elseif scroll_dir == 1 and can_scroll_right then
+      node:scroll_tabs(2)
+    end
+  else
+    return node.active_view:on_mouse_wheel(...)
+  end
 end
 
 
