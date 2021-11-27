@@ -132,5 +132,9 @@ command.add(nil, {
       return true
     end
     return false
+  end,
+  ["root:log_scene_graph"] = function()
+    core.log(core.stringify_scene_graph())
   end
 })
+

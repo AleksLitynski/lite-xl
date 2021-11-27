@@ -18,6 +18,9 @@ function ResultsView:new(text, fn)
   self:begin_search(text, fn)
 end
 
+function ResultsView:__tostring()
+  return "ResultsView"
+end
 
 function ResultsView:get_name()
   return "Search Results"
@@ -128,8 +131,11 @@ function ResultsView:get_line_height()
 end
 
 
-function ResultsView:get_scrollable_size()
-  return self:get_results_yoffset() + #self.results * self:get_line_height()
+function ResultsView:get_scrollable_bounds()
+  return {
+    x = math.huge,
+    y = self:get_results_yoffset() + #self.results * self:get_line_height()
+  }
 end
 
 

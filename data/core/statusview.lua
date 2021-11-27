@@ -23,6 +23,10 @@ function StatusView:new()
   self.tooltip = {}
 end
 
+function StatusView:__tostring()
+  return "StatusView"
+end
+
 
 function StatusView:on_mouse_pressed()
   core.set_active_view(core.last_active_view)

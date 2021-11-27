@@ -1,0 +1,37 @@
+
+-- grow_direction == left, right, up, down
+function View:grow_to_fit_content(grow_direction)
+  if not self.visible then return end
+
+
+  for k,v in pairs(self) do
+    print(k)
+  end
+
+
+
+  ({
+    top = function()
+
+    end,
+    bottom = function()
+
+    end,
+    left = function()
+
+    end,
+    right = function()
+      core.log("grow right!")
+    end
+  })[grow_direction]()
+
+
+  if self.can_grow_to_fit then
+    core.log("scroll: " .. tostring(self.scroll.x) .. ", " .. tostring(self.scroll.y))
+    core.log("size: " .. tostring(self.size.x) .. ", " .. tostring(self.size.y))
+  end
+end
+
+
+
+

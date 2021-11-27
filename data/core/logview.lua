@@ -44,6 +44,9 @@ function LogView:new()
   self.yoffset = 0
 end
 
+function LogView:__tostring()
+  return "LogView"
+end
 
 function LogView:get_name()
   return "Log"

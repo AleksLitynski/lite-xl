@@ -37,6 +37,10 @@ function Highlighter:new(doc)
   end, self)
 end
 
+function Highlighter:__tostring()
+  return "Highlighter"
+end
+
 
 function Highlighter:reset()
   self.lines = {}

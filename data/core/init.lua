@@ -1106,5 +1106,42 @@ function core.on_error(err)
   end
 end
 
+function core.stringify_scene_graph(view, indent)
+  local indent_depth = 4
+  if not view and not indent then
+    view = core.root_view
+  elseif not view then
+    return ""
+  end
+  indent = indent or 0
+  if indent == 0 then
+    return view.__tostring() .. ": " .. core.stringify_scene_graph(view.root_node, indent_depth)
+  else
+    local indent_char = string.rep(" ", indent)
+    local str =  (view.type and view.type or view.__tostring()) .. "\n"
+    if view.type == "leaf" then
+      if view.views then
+        for idx, child_view in ipairs(view.views) do
+          str = str .. indent_char .. core.stringify_scene_graph(child_view, indent + (indent_depth * 2))
+        end
+      else
+        str = str .. indent_char .. "views: (none)" .. "\n"
+      end
+    elseif view.type then
+      if view.a then
+        str = str .. indent_char .. "a: " .. core.stringify_scene_graph(view.a, indent + indent_depth)
+      else
+        str = str .. indent_char .. "a: (none)" .. "\n"
+      end
+      if view.a then
+        str = str .. indent_char .. "b: " .. core.stringify_scene_graph(view.b, indent + indent_depth)
+      else
+        str = str .. indent_char .. "b: (none)" .. "\n"
+      end
+    end
+
+    return str
+  end
+end
 
 return core

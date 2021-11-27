@@ -45,4 +45,8 @@ function EmptyView:on_mouse_pressed(button, x, y, clicks)
   end
 end
 
+function EmptyView:__tostring()
+  return "EmptyView"
+end
+
 return EmptyView

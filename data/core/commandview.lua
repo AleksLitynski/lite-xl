@@ -12,6 +12,10 @@ function SingleLineDoc:insert(line, col, text)
   SingleLineDoc.super.insert(self, line, col, text:gsub("\n", ""))
 end
 
+function SingleLineDoc:__tostring()
+  return "SingleLineDoc"
+end
+
 
 local CommandView = DocView:extend()
 
@@ -45,6 +49,9 @@ function CommandView:new()
   self.label = ""
 end
 
+function CommandView:__tostring()
+  return "CommandView"
+end
 
 function CommandView:set_hidden_suggestions()
   self.show_suggestions = false
@@ -64,8 +71,8 @@ function CommandView:get_line_screen_position()
 end
 
 
-function CommandView:get_scrollable_size()
-  return 0
+function CommandView:get_scrollable_bounds()
+  return { x = 0, y = 0 }
 end
 
 

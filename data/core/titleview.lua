@@ -28,6 +28,10 @@ function TitleView:new()
   self.visible = true
 end
 
+function TitleView:__tostring()
+  return "TitleView"
+end
+
 function TitleView:configure_hit_test(borderless)
   if borderless then
     local title_height = title_view_height()

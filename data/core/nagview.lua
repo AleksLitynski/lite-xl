@@ -20,6 +20,10 @@ function NagView:new()
   self.queue = {}
 end
 
+function NagView:__tostring()
+  return "NagView"
+end
+
 function NagView:get_title()
   return self.title
 end

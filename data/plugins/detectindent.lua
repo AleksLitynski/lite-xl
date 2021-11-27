@@ -118,6 +118,12 @@ function Doc:new(...)
   update_cache(self)
 end
 
+
+function Doc:__tostring()
+  return "Doc"
+end
+
+
 local clean = Doc.clean
 function Doc:clean(...)
   clean(self, ...)

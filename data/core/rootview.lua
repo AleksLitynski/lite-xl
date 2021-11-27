@@ -10,6 +10,7 @@ local DocView = require "core.docview"
 local EmptyView = require "core.emptyview"
 local command = require "core.command"
 
+local inspect = require "core.inspect"
 
 local Node = Object:extend()
 
@@ -30,6 +31,9 @@ function Node:new(type)
   self.move_towards = View.move_towards
 end
 
+function Node:__tostring()
+  return "Node"
+end
 
 function Node:propagate(fn, ...)
   self.a[fn](self.a, ...)
@@ -783,6 +787,50 @@ function Node:get_drag_overlay_tab_position(x, y, dragged_node, dragged_index)
   return tab_index, tab_x, tab_y, tab_w, tab_h
 end
 
+function Node:inner_size()
+  -- A node can either be a vsplit, an hsplit, or a leaf
+  -- A leaf is a list of views (although only one view can be the active tab at at time)
+  -- A split as an 'a' and 'b' property, representing either the top/bottom or left/right,
+  --   depending on the split type
+  if self.type == "leaf" then
+    if self.active_view then
+      print("leaf found " .. self.active_view.__tostring())
+      return self.active_view:get_scrollable_bounds()
+    else
+      print("forced huge")
+      return { x = math.huge, y = math.huge }
+    end
+  else
+    local a = self.a:inner_size()
+    local b = self.b:inner_size()
+    if a.x == math.huge then a.x = 0 end -- math.huge means the region doesn't care if it's scrollable
+    if a.y == math.huge then a.y = 0 end
+    if b.x == math.huge then b.x = 0 end
+    if b.y == math.huge then b.y = 0 end
+    if self.type == "vsplit" then -- above and below
+      return { x = math.max(a.x, b.x), y = a.y + b.y }
+    elseif self.type == "hsplit" then -- left and right
+      return { x = a.x + b.x, y = math.max(a.y, b.y) }
+    end
+  end
+end
+
+
+function Node:grow_to_fit_active_view(direction)
+  local outer_size = self.size
+  local inner_size = self:inner_size()
+
+  print('outer size: ' .. inspect(outer_size))
+  print('inner size: ' .. inspect(inner_size))
+
+  if direction == "left" or direction == "right" and inner_size.x ~= math.huge and inner_size.x > outer_size.x then
+    self.size.x = inner_size.x
+  elseif direction == "up" or direction == "down" and inner_size.y ~= math.huge and inner_size.y > outer_size.y then
+    self.size.y = inner_size.y
+  end
+end
+
+
 
 local RootView = View:extend()
 
@@ -801,6 +849,9 @@ function RootView:new()
   self.drag_overlay_tab.to = { x = 0, y = 0, w = 0, h = 0 }
 end
 
+function RootView:__tostring()
+  return "RootView"
+end
 
 function RootView:defer_draw(fn, ...)
   table.insert(self.deferred_draws, 1, { fn = fn, ... })
@@ -865,11 +916,15 @@ end
 function RootView.on_view_mouse_pressed(button, x, y, clicks)
 end
 
-
 function RootView:on_mouse_pressed(button, x, y, clicks)
   local div = self.root_node:get_divider_overlapping_point(x, y)
   if div then
-    self.dragged_divider = div
+    -- If we double click an hsplit, find the view to it's left and expand it to fit it's contents
+    if clicks == 2 and div.type == 'hsplit' and div.a then
+      div.a:grow_to_fit_active_view('right')
+    else
+      self.dragged_divider = div
+    end
     return true
   end
   local node = self.root_node:get_child_overlapping_point(x, y)
@@ -1189,6 +1244,5 @@ function RootView:draw()
     core.cursor_change_req = nil
   end
 end
-
 
 return RootView

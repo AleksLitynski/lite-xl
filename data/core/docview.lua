@@ -56,8 +56,12 @@ function DocView:new(doc)
   self.doc = assert(doc)
   self.font = "code_font"
   self.last_x_offset = {}
+  self.doc_width = 0
 end
 
+function DocView:__tostring()
+  return "DocView"
+end
 
 function DocView:try_close(do_close)
   if self.doc:is_dirty()
@@ -97,11 +101,15 @@ function DocView:get_filename()
 end
 
 
-function DocView:get_scrollable_size()
+function DocView:get_scrollable_bounds()
+  local x = math.huge
+  local y = math.huge
   if not config.scroll_past_end then
-    return self:get_line_height() * (#self.doc.lines) + style.padding.y * 2
+    y = self:get_line_height() * (#self.doc.lines) + style.padding.y * 2
+  else
+    y = self:get_line_height() * (#self.doc.lines - 1) + self.size.y
   end
-  return self:get_line_height() * (#self.doc.lines - 1) + self.size.y
+  return { x = x, y = y }
 end
 
 
@@ -389,6 +397,7 @@ function DocView:draw()
   local pos = self.position
   x, y = self:get_line_screen_position(minline)
   core.push_clip_rect(pos.x + gw, pos.y, self.size.x, self.size.y)
+  self.doc_width = 0
   for i = minline, maxline do
     self:draw_line_body(i, x, y)
     y = y + lh

@@ -43,6 +43,11 @@ function TreeView:new()
   self.cache = {}
   self.last = {}
   self.tooltip = { x = 0, y = 0, begin = 0, alpha = 0 }
+  self.can_grow_to_fit = true
+end
+
+function TreeView:__tostring()
+  return "TreeView"
 end
 
 
@@ -94,7 +99,6 @@ end
 function TreeView:get_item_height()
   return style.font:get_height() + style.padding.y
 end
-
 
 function TreeView:invalidate_cache(dirname)
   for _, v in pairs(self.cache[dirname]) do
@@ -271,8 +275,20 @@ function TreeView:update()
 end
 
 
-function TreeView:get_scrollable_size()
-  return self.count_lines and self:get_item_height() * (self.count_lines + 1) or math.huge
+function TreeView:get_scrollable_bounds()
+
+  local width = 0
+  for item, x,y,w,h in self:each_item() do
+    if x + w > width then
+      width = x + w
+    end
+  end
+  print("tree view width: " .. tostring(width))
+
+  return {
+    x = width,
+    y = self.count_lines and self:get_item_height() * (self.count_lines + 1) or math.huge
+  }
 end
 
 

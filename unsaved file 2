@@ -1,0 +1,30 @@
+
+
+
+
+Object
+-> ContextMenu
+-> Highlighter
+-> Doc
+-> RootView (Node:Extend)
+-> View
+  -> CommandView
+  -> DocView
+  -> EmptyView
+  -> LogView
+  -> NagView
+  -> RootView (RootView:Extend)
+  -> StatusView
+  -> TitleView
+  -> ProjectSearch
+  -> ToolbarView
+  -> TreeView
+
+
+
+Node vs view??
+
+
+
+
+Doc

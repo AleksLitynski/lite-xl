@@ -4,6 +4,7 @@ local style = require "core.style"
 local common = require "core.common"
 local Object = require "core.object"
 
+local inspect = require "core.inspect"
 
 local View = Object:extend()
 
@@ -18,6 +19,11 @@ function View:new()
   self.scroll = { x = 0, y = 0, to = { x = 0, y = 0 } }
   self.cursor = "arrow"
   self.scrollable = false
+  self.can_grow_to_fit = false
+end
+
+function View:__tostring()
+  return "View"
 end
 
 function View:move_towards(t, k, dest, rate)
@@ -50,11 +56,13 @@ function View:get_name()
   return "---"
 end
 
-
 function View:get_scrollable_size()
-  return math.huge
+  return self:get_scrollable_bounds().y
 end
 
+function View:get_scrollable_bounds()
+  return { x = math.huge, y = math.huge }
+end
 
 function View:get_scrollbar_rect()
   local sz = self:get_scrollable_size()

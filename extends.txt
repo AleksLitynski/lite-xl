@@ -1,0 +1,21 @@
+
+
+
+Object
+	-> Highlighter
+	-> ContextMenu
+	-> Doc
+		-> SingleLineDoc
+	-> Node
+	-> View
+		-> DocView
+			-> CommandView
+		-> ToolbarView
+		-> TreeView
+		-> StatusView
+		-> ResultsView
+		-> EmptyView
+		-> TitleView
+		-> RootView
+		-> NagView
+		-> LogView

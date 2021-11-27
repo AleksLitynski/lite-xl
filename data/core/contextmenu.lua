@@ -22,6 +22,10 @@ function ContextMenu:new()
   self.position = { x = 0, y = 0 }
 end
 
+function ContextMenu:__tostring()
+  return "ContextMenu"
+end
+
 local function get_item_size(item)
   local lw, lh
   if item == DIVIDER then

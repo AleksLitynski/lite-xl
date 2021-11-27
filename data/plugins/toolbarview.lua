@@ -29,6 +29,9 @@ function ToolbarView:new()
   self.tooltip = false
 end
 
+function ToolbarView:__tostring()
+  return "ToolbarView"
+end
 
 function ToolbarView:update()
   local dest_size = self.visible and toolbar_height() or 0
